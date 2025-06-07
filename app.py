@@ -179,49 +179,69 @@ def bit_plane_slicing(input, bit):
 
     return bit_img
 
-st.title("Image Processing Application")
+st.set_page_config(layout="wide")
+st.title("emagine - Image Processing Tool")
+st.header("IPCV Internal Assessment by Rik Patra")
 
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png", "bmp"])
+
+st.sidebar.title("Operations")
+operation = st.sidebar.radio("Choose operation", [
+    "Upscale", "Downscale", "Quantization",
+    "Histogram Equalization", "Negative",
+    "Thresholding", "Logarithmic", "Power Law",
+    "Bit Plane Slicing"
+])
+
 if uploaded_file:
     image = Image.open(uploaded_file)
-    st.image(image, caption="Original Image", use_container_width=True)
-
-    operation = st.selectbox("Choose operation", [
-        "Upscale", "Downscale", "Quantization",
-        "Histogram Equalization", "Negative",
-        "Thresholding", "Logarithmic", "Power Law",
-        "Bit Plane Slicing"
-    ])
 
     if operation == "Upscale":
         scale = st.slider("Scale", 1.0, 5.0, 2.0)
-        result = upscale(image, scale)
     elif operation == "Downscale":
         scale = st.slider("Scale", 0.1, 1.0, 0.5)
-        result = downscale(image)
     elif operation == "Quantization":
         bits = st.select_slider("Bits", options=[1, 2, 3, 4, 5, 6, 7, 8], value=4)
         levels = math.pow(2, bits)
-        result = quantization(image, levels)
-    elif operation == "Histogram Equalization":
-        result = histogram_equalisation(image)
-    elif operation == "Negative":
-        result = negative(image)
     elif operation == "Thresholding":
         threshold = st.slider("Threshold", 0.1, 1.0, 0.5)
-        result = thresholding(image, threshold)
     elif operation == "Logarithmic":
         c = st.slider("c-Value", 1, 255, 255)
-        result = logarithmic(image, c)
     elif operation == "Power Law":
         gamma = st.slider("Gamma", 0.1, 3.0, 1.0)
-        result = power_law(image, gamma)
     elif operation == "Bit Plane Slicing":
         bit = st.select_slider("Bit", options=[0, 1, 2, 3, 4, 5, 6, 7], value=3)
-        result = bit_plane_slicing(image, bit)
 
-    if uploaded_file and st.button("Apply"):
-        st.image(result, caption="Processed Image", use_container_width=True)
-        buf = io.BytesIO()
-        result.save(buf, format="PNG")
-        st.download_button("Download Result", buf.getvalue(), file_name="result.png")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(image, caption="Original Image", use_container_width=True)
+        apply = st.button("Apply")
+        result = None
+        if apply:
+            if operation == "Upscale":
+                result = upscale(image, scale)
+            elif operation == "Downscale":
+                result = downscale(image)
+            elif operation == "Quantization":
+                result = quantization(image, levels)
+            elif operation == "Histogram Equalization":
+                result = histogram_equalisation(image)
+            elif operation == "Negative":
+                result = negative(image)
+            elif operation == "Thresholding":
+                result = thresholding(image, threshold)
+            elif operation == "Logarithmic":
+                result = logarithmic(image, c)
+            elif operation == "Power Law":
+                result = power_law(image, gamma)
+            elif operation == "Bit Plane Slicing":
+                result = bit_plane_slicing(image, bit)
+    
+    with col2:
+        if result is not None:
+            st.image(result, caption="Processed Image", use_container_width=True)
+            buf = io.BytesIO()
+            result.save(buf, format="PNG")
+            st.download_button("Download Result", buf.getvalue(), file_name="result.png")
+        else:
+            st.write("Processed image will appear here after you click Apply.")
