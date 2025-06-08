@@ -85,24 +85,6 @@ def histogram_equalisation(input):
     equalized = Image.fromarray(new_pixels)
     equalized.show()
 
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
-    plt.title("Original Histogram")
-    plt.xlabel("Pixel Intensity (0–255)")
-    plt.ylabel("Frequency")
-    plt.plot(hist, color='black')
-    plt.grid(True)
-    
-    plt.subplot(1, 2, 2)
-    plt.title("Equalized Histogram")
-    plt.xlabel("Pixel Intensity (0–255)")
-    plt.ylabel("Frequency")
-    plt.plot(equalized.histogram(), color='blue')
-    plt.grid(True)
-    
-    plt.tight_layout()
-    plt.show()
-
     return equalized
 
 def negative(input):
@@ -179,6 +161,95 @@ def bit_plane_slicing(input, bit):
 
     return bit_img
 
+def smoothening(input):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    filter = np.array([
+        [1,1,1],
+        [1,1,1],
+        [1,1,1]
+    ], dtype=np.float32) / 9.0
+    
+    pad_pixels = np.pad(pixels, ((1,1),(1,1)), mode="edge")
+
+    new_pixels = np.zeros_like(pixels, dtype=np.float32)
+
+    for x in range(pixels.shape[0]):
+        for y in range(pixels.shape[1]):
+            region = pad_pixels[x:x+3, y:y+3]
+            avg = np.sum(region * filter)
+            new_pixels[x,y] = avg
+
+    new_pixels = np.clip(new_pixels, 0, 255)
+
+    smoothed = Image.fromarray(new_pixels.astype(np.uint8))
+    smoothed.show()
+
+    return smoothed
+
+def laplacian(input):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    filter = np.array([
+        [ 0,-1, 0],
+        [-1, 5,-1],
+        [ 0,-1, 0]
+    ], dtype=np.float32)
+    
+    pad_pixels = np.pad(pixels, ((1,1),(1,1)), mode="edge")
+
+    new_pixels = np.zeros_like(pixels, dtype=np.float32)
+
+    for x in range(pixels.shape[0]):
+        for y in range(pixels.shape[1]):
+            region = pad_pixels[x:x+3, y:y+3]
+            avg = np.sum(region * filter)
+            new_pixels[x,y] = avg
+
+    new_pixels = np.clip(new_pixels, 0, 255)
+
+    sharpened = Image.fromarray(new_pixels.astype(np.uint8))
+    sharpened.show()
+
+    return sharpened
+
+def sobel(input):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    filter1 = np.array([
+        [-1,-2,-1],
+        [ 0, 0, 0],
+        [ 1, 2, 1]
+    ], dtype=np.float32)
+
+    filter2 = np.array([
+        [-1, 0, 1],
+        [-2, 0, 2],
+        [-1, 0, 1]
+    ], dtype=np.float32)
+    
+    pad_pixels = np.pad(pixels, ((1,1),(1,1)), mode="edge")
+
+    new_pixels = np.zeros_like(pixels, dtype=np.float32)
+
+    for x in range(pixels.shape[0]):
+        for y in range(pixels.shape[1]):
+            region = pad_pixels[x:x+3, y:y+3]
+            avg1 = np.sum(region * filter1)
+            avg2 = np.sum(region * filter2)
+            avg = np.sqrt(avg1**2 + avg2**2)
+            new_pixels[x,y] = avg
+
+    new_pixels = np.clip(new_pixels, 0, 255)
+
+    sobeled = Image.fromarray(new_pixels.astype(np.uint8))
+    sobeled.show()
+
+    return sobeled
+
 st.set_page_config(layout="wide")
 st.title("emagine - Image Processing Tool")
 st.header("IPCV Internal Assessment by Rik Patra")
@@ -190,7 +261,8 @@ operation = st.sidebar.radio("Choose operation", [
     "Upscale", "Downscale", "Quantization",
     "Histogram Equalization", "Negative",
     "Thresholding", "Logarithmic", "Power Law",
-    "Bit Plane Slicing"
+    "Bit Plane Slicing", "Smoothening (Simple Averaging)",
+    "Sharpening (Laplacian)", "Edge Detection (Sobel)"
 ])
 
 if uploaded_file:
@@ -236,6 +308,12 @@ if uploaded_file:
                 result = power_law(image, gamma)
             elif operation == "Bit Plane Slicing":
                 result = bit_plane_slicing(image, bit)
+            elif operation == "Smoothening (Simple Averaging)":
+                result = smoothening(image)
+            elif operation == "Sharpening (Laplacian)":
+                result = laplacian(image)
+            elif operation == "Edge Detection (Sobel)":
+                result = sobel(image)
     
     with col2:
         if result is not None:
