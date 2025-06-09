@@ -250,6 +250,213 @@ def sobel(input):
 
     return sobeled
 
+def dft(input):
+    image = input.convert("L")
+    image = image.resize((128, 128))
+    pixels = np.array(image, dtype=np.float32)
+
+    new_pixels = np.zeros_like(pixels, dtype=complex)
+
+    for u in range(pixels.shape[0]):
+        for v in range(pixels.shape[1]):
+            total = 0.0
+            for x in range(pixels.shape[0]):
+                for y in range(pixels.shape[1]):
+                    power = -2j * np.pi * ((u*x)/pixels.shape[0] + (v*y)/pixels.shape[1])
+                    total += pixels[x,y] * np.exp(power)
+            new_pixels[u,v] = total
+
+    dft_pixels = 20 * np.log(np.abs(new_pixels) + 1)
+    dft_pixels = dft_pixels - dft_pixels.min()
+    dft_pixels = dft_pixels / dft_pixels.max() * 255
+    
+    dft_img = Image.fromarray(dft_pixels.astype(np.uint8))
+    dft_img.show()
+
+    return dft_img
+
+def inverse_dft(input):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    dft_pixels = np.fft.fft2(pixels)
+    inverse_pixels = np.fft.ifft2(dft_pixels)
+    inverse_pixels = np.real(inverse_pixels)
+
+    fft_img = Image.fromarray(inverse_pixels.astype(np.uint8))
+    fft_img.show()
+
+    return fft_img
+
+def ideal_low_pass_filter(input, D0):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    dft_pixels = np.fft.fft2(pixels)
+    new_pixels = np.fft.fftshift(dft_pixels)
+
+    filter = np.zeros_like(pixels, dtype=np.float32)
+    M2 = pixels.shape[0] // 2
+    N2 = pixels.shape[1] // 2
+
+    for u in range(pixels.shape[0]):
+        for v in range(pixels.shape[1]):
+            D = np.sqrt((u-M2)**2 + (v-N2)**2)
+            if D <= D0:
+                filter[u,v] = 1
+
+    low_pixels = new_pixels * filter
+
+    low_pixels = np.fft.ifftshift(low_pixels)
+    inverse_pixels = np.fft.ifft2(low_pixels)
+    inverse_pixels = np.real(inverse_pixels)
+
+    low_pass_img = Image.fromarray(inverse_pixels.astype(np.uint8))
+    low_pass_img.show()
+
+    return low_pass_img
+
+def butterworth_low_pass_filter(input, order, D0):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    dft_pixels = np.fft.fft2(pixels)
+    new_pixels = np.fft.fftshift(dft_pixels)
+
+    filter = np.zeros_like(pixels, dtype=np.float32)
+    M2 = pixels.shape[0] // 2
+    N2 = pixels.shape[1] // 2
+
+    for u in range(pixels.shape[0]):
+        for v in range(pixels.shape[1]):
+            D = np.sqrt((u-M2)**2 + (v-N2)**2)
+            transfer = 1 / (1 + np.pow(D/D0, 2*order))
+            filter[u,v] = transfer
+
+    low_pixels = new_pixels * filter
+
+    low_pixels = np.fft.ifftshift(low_pixels)
+    inverse_pixels = np.fft.ifft2(low_pixels)
+    inverse_pixels = np.real(inverse_pixels)
+
+    butterworth_low_pass_img = Image.fromarray(inverse_pixels.astype(np.uint8))
+    butterworth_low_pass_img.show()
+
+    return butterworth_low_pass_img
+
+def gaussian_low_pass_filter(input, D0):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    dft_pixels = np.fft.fft2(pixels)
+    new_pixels = np.fft.fftshift(dft_pixels)
+
+    filter = np.zeros_like(pixels, dtype=np.float32)
+    M2 = pixels.shape[0] // 2
+    N2 = pixels.shape[1] // 2
+
+    for u in range(pixels.shape[0]):
+        for v in range(pixels.shape[1]):
+            D = np.sqrt((u-M2)**2 + (v-N2)**2)
+            power = -1 * (D**2) / (2*(D0**2))
+            filter[u,v] = np.exp(power)
+
+    low_pixels = new_pixels * filter
+
+    low_pixels = np.fft.ifftshift(low_pixels)
+    inverse_pixels = np.fft.ifft2(low_pixels)
+    inverse_pixels = np.real(inverse_pixels)
+
+    gaussian_low_pass_img = Image.fromarray(inverse_pixels.astype(np.uint8))
+    gaussian_low_pass_img.show()
+
+    return gaussian_low_pass_img
+
+def ideal_high_pass_filter(input, D0):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    dft_pixels = np.fft.fft2(pixels)
+    new_pixels = np.fft.fftshift(dft_pixels)
+
+    filter = np.zeros_like(pixels, dtype=np.float32)
+    M2 = pixels.shape[0] // 2
+    N2 = pixels.shape[1] // 2
+
+    for u in range(pixels.shape[0]):
+        for v in range(pixels.shape[1]):
+            D = np.sqrt((u-M2)**2 + (v-N2)**2)
+            if D > D0:
+                filter[u,v] = 1
+
+    high_pixels = new_pixels * filter
+
+    high_pixels = np.fft.ifftshift(high_pixels)
+    inverse_pixels = np.fft.ifft2(high_pixels)
+    inverse_pixels = np.real(inverse_pixels)
+
+    high_pass_img = Image.fromarray(inverse_pixels.astype(np.uint8))
+    high_pass_img.show()
+
+    return high_pass_img
+
+def butterworth_high_pass_filter(input, order, D0):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    dft_pixels = np.fft.fft2(pixels)
+    new_pixels = np.fft.fftshift(dft_pixels)
+
+    filter = np.zeros_like(pixels, dtype=np.float32)
+    M2 = pixels.shape[0] // 2
+    N2 = pixels.shape[1] // 2
+
+    for u in range(pixels.shape[0]):
+        for v in range(pixels.shape[1]):
+            D = np.sqrt((u-M2)**2 + (v-N2)**2)
+            if D:
+                transfer = 1 / (1 + np.pow(D0/D, 2*order))
+            filter[u,v] = transfer
+
+    high_pixels = new_pixels * filter
+
+    high_pixels = np.fft.ifftshift(high_pixels)
+    inverse_pixels = np.fft.ifft2(high_pixels)
+    inverse_pixels = np.real(inverse_pixels)
+
+    butterworth_high_pass_img = Image.fromarray(inverse_pixels.astype(np.uint8))
+    butterworth_high_pass_img.show()
+
+    return butterworth_high_pass_img
+
+def gaussian_high_pass_filter(input, D0):
+    image = input.convert("L")
+    pixels = np.array(image)
+
+    dft_pixels = np.fft.fft2(pixels)
+    new_pixels = np.fft.fftshift(dft_pixels)
+
+    filter = np.zeros_like(pixels, dtype=np.float32)
+    M2 = pixels.shape[0] // 2
+    N2 = pixels.shape[1] // 2
+
+    for u in range(pixels.shape[0]):
+        for v in range(pixels.shape[1]):
+            D = np.sqrt((u-M2)**2 + (v-N2)**2)
+            power = -1 * (D**2) / (2*(D0**2))
+            filter[u,v] = 1 - np.exp(power)
+
+    high_pixels = new_pixels * filter
+
+    high_pixels = np.fft.ifftshift(high_pixels)
+    inverse_pixels = np.fft.ifft2(high_pixels)
+    inverse_pixels = np.real(inverse_pixels)
+
+    gaussian_high_pass_img = Image.fromarray(inverse_pixels.astype(np.uint8))
+    gaussian_high_pass_img.show()
+
+    return gaussian_high_pass_img
+
 st.set_page_config(layout="wide")
 st.title("emagine - Image Processing Tool")
 st.header("IPCV Internal Assessment by Rik Patra")
@@ -262,7 +469,11 @@ operation = st.sidebar.radio("Choose operation", [
     "Histogram Equalization", "Negative",
     "Thresholding", "Logarithmic", "Power Law",
     "Bit Plane Slicing", "Smoothening (Simple Averaging)",
-    "Sharpening (Laplacian)", "Edge Detection (Sobel)"
+    "Sharpening (Laplacian)", "Edge Detection (Sobel)",
+    "Discrete Fourier Transform", "Inverse Discrete Fourier Transform",
+    "Ideal Low Pass Filter", "Butterworth Low Pass Filter", 
+    "Gaussian Low Pass Filter", "Ideal High Pass Filter", 
+    "Butterworth High Pass Filter", "Gaussian High Pass Filter"
 ])
 
 if uploaded_file:
@@ -283,6 +494,20 @@ if uploaded_file:
         gamma = st.slider("Gamma", 0.1, 3.0, 1.0)
     elif operation == "Bit Plane Slicing":
         bit = st.select_slider("Bit", options=[0, 1, 2, 3, 4, 5, 6, 7], value=3)
+    elif operation == "Ideal Low Pass Filter":
+        radius = st.slider("Radius", 0, 300, 50)
+    elif operation == "Butterworth Low Pass Filter":
+        order = st.select_slider("Order", options=[1, 2, 3, 4], value=2)
+        radius = st.slider("Radius", 0, 300, 50)
+    elif operation == "Gaussian Low Pass Filter":
+        radius = st.slider("Radius", 0, 300, 50)
+    elif operation == "Ideal High Pass Filter":
+        radius = st.slider("Radius", 0, 300, 50)
+    elif operation == "Butterworth High Pass Filter":
+        order = st.select_slider("Order", options=[1, 2, 3, 4], value=2)
+        radius = st.slider("Radius", 0, 300, 50)
+    elif operation == "Gaussian High Pass Filter":
+        radius = st.slider("Radius", 0, 300, 50)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -314,6 +539,22 @@ if uploaded_file:
                 result = laplacian(image)
             elif operation == "Edge Detection (Sobel)":
                 result = sobel(image)
+            elif operation == "Discrete Fourier Transform":
+                result = dft(image)
+            elif operation == "Inverse Discrete Fourier Transform":
+                result = inverse_dft(image)
+            elif operation == "Ideal Low Pass Filter":
+                result = ideal_low_pass_filter(image, radius)
+            elif operation == "Butterworth Low Pass Filter":
+                result = butterworth_low_pass_filter(image, order, radius)
+            elif operation == "Gaussian Low Pass Filter":
+                result = gaussian_low_pass_filter(image, radius)
+            elif operation == "Ideal High Pass Filter":
+                result = ideal_high_pass_filter(image, radius)
+            elif operation == "Butterworth High Pass Filter":
+                result = butterworth_high_pass_filter(image, order, radius)
+            elif operation == "Gaussian High Pass Filter":
+                result = gaussian_high_pass_filter(image, radius)
     
     with col2:
         if result is not None:
