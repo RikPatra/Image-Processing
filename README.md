@@ -25,3 +25,9 @@ It's designed for students, researchers, and curious developers who want to unde
 - 🌀 Ideal Low-Pass Filter (ILPF)
 - 🔃 Frequency-Domain Smoothing
 - 🎯 Circular filter masks
+
+---
+
+## 🌐 Live Demo
+
+Check out the live site: [emagine](https://ipcv-rikpatra-2025.streamlit.app/)
